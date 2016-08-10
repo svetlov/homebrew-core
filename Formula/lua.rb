@@ -3,14 +3,13 @@ class Lua < Formula
   homepage "https://www.lua.org/"
   url "https://www.lua.org/ftp/lua-5.2.4.tar.gz"
   sha256 "b9e2e4aad6789b3b63a056d442f7b39f0ecfca3ae0f1fc0ae4e9614401b69f4b"
-  revision 4
+  revision 9999  # make sure that this version is always preferable
 
   bottle do
     cellar :any
-    sha256 "cfcc9d3f4326de0690e09f046329dc656922fd2201270393cb02b6fb1ffe1349" => :el_capitan
-    sha256 "809d4bcc9937b0d7d6483f1cdf211a5adb7d3adbf13663d1e3917211d0de6165" => :yosemite
-    sha256 "8acadcad5cc0e79193a9d88e11e391b366ed631d23279954bd4fed6807e14db4" => :mavericks
-    sha256 "60c0989a891058a5b87d7a264f72e5d3de44aefe11b87dfaafcd18104f7229bb" => :x86_64_linux
+    sha256 "5e52670b9b9c2554018545afcc13a08efde638aab521d39740c273992fc65922" => :el_capitan
+    sha256 "3a1f5bfe0fd490c96e933b0726d327079b6a1cd6b9e881440173351ff9a349ad" => :yosemite
+    sha256 "a84d3ebd9afa4a61b0120471e5a0dfcc670d294701a64edebd25fcc815fe76f8" => :mavericks
   end
 
   pour_bottle? do
@@ -36,6 +35,16 @@ class Lua < Formula
   # See: https://github.com/Homebrew/homebrew/pull/5043
   patch :DATA if OS.mac?
 
+  patch do
+    url "https://raw.github.com/svetlov/dots/master/all/libs/lua-mac.patch"
+    # sha1 "1e151d4ff3ce83d635cf794acf0c781e1b748ff1"
+  end if OS.mac?
+
+  patch do
+    url "https://raw.github.com/svetlov/dots/master/all/libs/lua-linux.patch"
+    # sha1 "1e151d4ff3ce83d635cf794acf0c781e1b748ff1"
+  end if OS.linux?
+
   # completion provided by advanced readline power patch
   # See http://lua-users.org/wiki/LuaPowerPatches
   if build.with? "completion"
@@ -46,10 +55,9 @@ class Lua < Formula
   end
 
   # sigaction provided by posix signalling power patch
-  if build.with? "sigaction"
+  if build.with?  "sigaction"
     patch do
-      # original patch file (not available): http://lua-users.org/files/wiki_insecure/power_patches/5.2/lua-5.2.3-sig_catch.patch
-      url "https://raw.githubusercontent.com/Homebrew/patches/d674e02d1097b21032198854080204680b616b61/lua/lua-5.2.3-sig_catch.patch"
+      url "http://lua-users.org/files/wiki_insecure/power_patches/5.2/lua-5.2.3-sig_catch.patch"
       sha256 "f2e77f73791c08169573658caa3c97ba8b574c870a0a165972ddfbddb948c164"
     end
   end
@@ -63,11 +71,12 @@ class Lua < Formula
     ENV.universal_binary if build.universal?
 
     # Subtitute formula prefix in `src/Makefile` for install name (dylib ID).
+    inreplace "src/Makefile", "@LUA_PREFIX@", prefix if OS.mac?
+
     # Use our CC/CFLAGS to compile.
     inreplace "src/Makefile" do |s|
-      s.gsub! "@LUA_PREFIX@", prefix if OS.mac?
       s.remove_make_var! "CC"
-      s.change_make_var! "CFLAGS", "#{ENV.cflags} -DLUA_COMPAT_ALL $(SYSCFLAGS) $(MYCFLAGS)"
+      s.change_make_var! "CFLAGS", "#{ENV.cflags} -DLUA_COMPAT_ALL -fPIC $(SYSCFLAGS) $(MYCFLAGS)"
       s.change_make_var! "MYLDFLAGS", ENV.ldflags
     end
 
@@ -78,7 +87,7 @@ class Lua < Formula
     arch = if OS.mac? then "macosx" elsif OS.linux? then "linux" else "posix" end
     system "make", arch, "INSTALL_TOP=#{prefix}", "INSTALL_MAN=#{man1}"
     system "make", "install", "INSTALL_TOP=#{prefix}", "INSTALL_MAN=#{man1}"
-    (lib/"pkgconfig/lua.pc").write pc_file
+    (lib+"pkgconfig/lua.pc").write pc_file
 
     # Fix some software potentially hunting for different pc names.
     bin.install_symlink "lua" => "lua5.2"
@@ -101,7 +110,7 @@ class Lua < Formula
         system "make", "build"
         system "make", "install"
 
-        (pkgshare/"5.2/luarocks").install_symlink Dir["#{libexec}/share/lua/5.2/luarocks/*"]
+        (share+"lua/5.2/luarocks").install_symlink Dir["#{libexec}/share/lua/5.2/luarocks/*"]
         bin.install_symlink libexec/"bin/luarocks-5.2"
         bin.install_symlink libexec/"bin/luarocks-admin-5.2"
         bin.install_symlink libexec/"bin/luarocks"
@@ -121,13 +130,13 @@ class Lua < Formula
   def pc_file; <<-EOS.undent
     V= 5.2
     R= 5.2.4
-    prefix=#{opt_prefix}
+    prefix=#{prefix}
     INSTALL_BIN= ${prefix}/bin
     INSTALL_INC= ${prefix}/include
     INSTALL_LIB= ${prefix}/lib
     INSTALL_MAN= ${prefix}/share/man/man1
-    INSTALL_LMOD= #{HOMEBREW_PREFIX}/share/lua/${V}
-    INSTALL_CMOD= #{HOMEBREW_PREFIX}/lib/lua/${V}
+    INSTALL_LMOD= ${prefix}/share/lua/${V}
+    INSTALL_CMOD= ${prefix}/lib/lua/${V}
     exec_prefix=${prefix}
     libdir=${exec_prefix}/lib
     includedir=${prefix}/include
