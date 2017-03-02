@@ -1,16 +1,16 @@
-class Vim < Formula
+class Vim7 < Formula
   desc "Vi \"workalike\" with many additional features"
   homepage "http://www.vim.org/"
   # *** Vim should be updated no more than once every 7 days ***
-  url "https://github.com/vim/vim/archive/v7.4.2109.tar.gz"
-  sha256 "fdf03f17bda80fe63313ce549a2ddf4ffb1e2ac344949e185928477142e3a8ae"
+  url "https://github.com/vim/vim/archive/v7.4.2235.tar.gz"
+  sha256 "aa105201a8cf27550ac95e5e91daa8556ed8f52cc7e36f8c377ff3e2648f90cc"
   head "https://github.com/vim/vim.git"
 
   bottle do
-    sha256 "25803331c389a61e804ed32e5a544763e7bf5edbd801da5cd818a911a61cc967" => :el_capitan
-    sha256 "ce39d986f34c1df7bc5f3276b4e40267742418966f787e79dc994b170be4908f" => :yosemite
-    sha256 "41cf42a35dc4035ec170af6d0c614743f180cf95accd8d687b44a13cd01fb146" => :mavericks
-    sha256 "aab9390285ebcaf78c0b9561e5c30bd3b8db21f26196f9520144aa4b6352c0b3" => :x86_64_linux
+    sha256 "6dee3364f96bbea8e329943933bfb9dd8eeee71b7592d427a68e33d637c7ddb9" => :el_capitan
+    sha256 "e14090bcc82ba5d2ca9b72283d73d16de0c1015c115aa395c26b7203ba5e609e" => :yosemite
+    sha256 "7284c73bb0e82984a8872fc150dcaadd6803fa2ab72948650c479c25e91cc45a" => :mavericks
+    sha256 "c47d3c8a704e53879c4a4260928d93fef2f7b2d8f80d4467597a1c120b49550d" => :x86_64_linux
   end
 
   deprecated_option "disable-nls" => "without-nls"
@@ -45,7 +45,6 @@ class Vim < Formula
   depends_on "luajit" => :optional
   depends_on :x11 if build.with? "client-server"
   depends_on "homebrew/dupes/ncurses" unless OS.mac?
-  depends_on "gtk+" => :optional
 
   conflicts_with "ex-vi",
     :because => "vim and ex-vi both install bin/ex and bin/view"
@@ -78,7 +77,7 @@ class Vim < Formula
     end
 
     opts << "--disable-nls" if build.without? "nls"
-    opts << "--enable-gui=" + (build.with?("gtk+") ? "gtk2" : "no")
+    opts << "--enable-gui=no"
 
     if build.with? "client-server"
       opts << "--with-x"
@@ -113,7 +112,6 @@ class Vim < Formula
   end
 
   test do
-    system bin/"vim", "--version"
     # Simple test to check if Vim was linked to Python version in $PATH
     if OS.mac? && build.with?("python")
       vim_path = bin/"vim"
